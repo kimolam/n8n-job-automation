@@ -1,0 +1,468 @@
+{
+  "name": "Job-Auto apply system",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -20
+      ],
+      "id": "96562061-dc8c-437b-87bd-24fd3d25fa29",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "IT Support Technician Vancouver"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "1"
+            },
+            {
+              "name": "country",
+              "value": "ca"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "f8d9f1a27cmsh3c7be6354136a80p1e0a4cjsn4e031f9b4911"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        -20
+      ],
+      "id": "1f88a18a-81a7-4cfe-89fe-e68bf94aac19",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a professional short cover letter for the following job:\n\nJob Title: {{$json[\"title\"]}}\nCompany: {{$json[\"company\"]}}\nLocation: {{$json[\"location\"]}}\nDescription: {{$json[\"description\"]}}\n\nKeep it formal, clear, and around 120-150 words.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        820,
+        -20
+      ],
+      "id": "03f58413-de03-4301-a208-39fd4d293278",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        900,
+        220
+      ],
+      "id": "781fce41-0cf6-4155-8ab7-aea24cd711e7",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "JNokjDy3La2CTcpS",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "sk_202e574298deab63f95cded36a182ffaeab57bdf"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "={{$json[\"html\"]}}"
+            },
+            {
+              "name": "landscape",
+              "value": "false"
+            },
+            {
+              "name": "use_print",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        300
+      ],
+      "id": "9a8fc453-2647-41d6-a874-f575ba2413cb",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        380,
+        -20
+      ],
+      "id": "cef40003-2322-43f2-9a6f-431cafc4be80",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b147f036-5eab-4977-a014-da4b42333ad5",
+              "name": "html",
+              "value": "=<html>   <body>     <h2>Cover Letter</h2>     <p>{{ $json[\"text\"] }}</p>   </body> </html>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1180,
+        -20
+      ],
+      "id": "58a640b9-d010-4ecb-87ef-6ca9ff5d61fa",
+      "name": "Cover letter writer"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ea89eb8-0bbb-4768-a11b-b137c19f061f",
+              "name": "title",
+              "value": "={{$json[\"data\"][0][\"job_title\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "8e7f44a3-28e5-46a5-9114-7803bd6b4ee2",
+              "name": "company",
+              "value": "={{$json[\"data\"][0][\"employer_name\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "b93af2ba-0e92-48dd-9205-ce6dbada40c0",
+              "name": "location",
+              "value": "={{$json[\"data\"][0][\"job_city\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "e1c032fa-0a63-4c25-b645-4c4e9b0f9842",
+              "name": "description",
+              "value": "={{$json[\"data\"][0][\"job_description\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "d66218f0-0c40-4bbf-adf3-5b8fc7b45b3c",
+              "name": "apply_link",
+              "value": "={{$json[\"data\"][0][\"job_apply_link\"]}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        -200
+      ],
+      "id": "af46b2ce-201f-4026-9ba0-4554c38e3a94",
+      "name": "Pull up jobs"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74348bef-a593-4842-943e-46aaa3871671",
+              "name": "base_resume",
+              "value": "SUMMARY: Passionate and knowledgeable cybersecurity student with hands-on experience in security operations and incident response. Experienced in identifying vulnerabilities, analyzing threats, and developing effective countermeasures. Skilled in applying security frameworks and industry best practices to protect organizations from cyber threats. Committed to continuous learning and professional development in the field of cybersecurity.  EDUCATION: ITRS.ua — Cybersecurity Program 2022 - Present  EXPERIENCE: Start Canada — IT Help Desk 2021 - 2022 - Provided technical support to internal users on Windows 10, Office 365, and Active Directory. - Troubleshooted and resolved hardware and software issues both remotely and on-site. - Managed user accounts and permissions following company IT policies.  Data Protect — Support Engineer 2019 - 2021 - Assisted in network monitoring and incident response for multiple client infrastructures. - Implemented basic security measures and patches to prevent vulnerabilities. - Supported system backups, disaster recovery drills, and endpoint security.  ITRS.ua — IT Support Intern 2018 - 2019 - Conducted troubleshooting sessions for desktop and network support. - Participated in vulnerability scanning and preliminary analysis. - Assisted in preparing security awareness training for internal teams.  SKILLS: - Operating Systems: Windows 10, Windows Server 2016 - Tools: SolarWinds, ServiceNow, Splunk - Networking: TCP/IP, DNS, DHCP, VPN configuration - Security: Active Directory Security, Vulnerability Management - Soft Skills: Strong Communication, Customer Service, Problem-Solving  CERTIFICATIONS: - CompTIA Security+ (in progress) - ITIL Foundation (in progress)  VOLUNTEER WORK: ITRS Cyber Club 2020 - Present - Participated in monthly cybersecurity drills and simulated attack scenarios. - Conducted workshops for basic cybersecurity hygiene for local businesses.",
+              "type": "string"
+            },
+            {
+              "id": "00d07ae9-5279-483c-9410-6685093d3d88",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        -460
+      ],
+      "id": "cd6941e5-5e3b-47cb-a816-aed66ee652d0",
+      "name": "Resume Base"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a resume optimization expert specializing in Applicant Tracking Systems (ATS).\n\nYour task:\n- Slightly adjust the resume to match the job description.\n- Focus on aligning keywords and skills for ATS optimization.\n- Keep all original dates, achievements, experiences, and structure intact.\n- Do not rewrite or invent new content.\n- Only fine-tune language and add missing keywords naturally.\n- Keep it professional and subtle.\n\nHere is the job description:\n{{ $node[\"Pull up jobs\"].json[\"description\"] }}\n\nHere is the base resume:\n{{ $node[\"Resume Base\"].json[\"base_resume\"] }}\n\nNow, provide the optimized version of the resume ready for applying.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        1580,
+        -320
+      ],
+      "id": "30087940-8fd3-4e37-a96e-1c3b19f57ea1",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "sk_202e574298deab63f95cded36a182ffaeab57bdf"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"source\": {{ JSON.stringify($node[\"Build Resume HTML\"].json.html) }},\n  \"landscape\": false,\n  \"use_print\": true\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2140,
+        -320
+      ],
+      "id": "3da24611-a87a-4d51-971c-64618d46ada4",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $node[\"Basic LLM Chain1\"].json[\"text\"];\n\n// Simple Markdown replacements\nconst htmlContent = rawText\n  .replace(/^### (.+)$/gm, '<h2>$1</h2>')  // Convert ### headers\n  .replace(/^## (.+)$/gm, '<h3>$1</h3>')   // Convert ## headers\n  .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')  // Bold\n  .replace(/\\*(.+?)\\*/g, '<em>$1</em>')              // Italic\n  .replace(/\\n\\s*[-*] (.+)/g, '<li>$1</li>')          // Bullet points\n  .replace(/\\n{2,}/g, '</p><p>')                      // Paragraphs\n  .replace(/\\n/g, ' ');                               // Remaining newlines to spaces\n\nreturn [\n  {\n    json: {\n      html: `\n      <html>\n        <head>\n          <style>\n            body { font-family: Arial, sans-serif; font-size: 14px; color: #333; padding: 30px; }\n            h1 { font-size: 22px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }\n            h2, h3 { margin-top: 24px; }\n            p { margin: 12px 0; }\n            li { margin-bottom: 6px; }\n          </style>\n        </head>\n        <body>\n          <h1>Professional Resume</h1>\n          <p>${htmlContent}</p>\n        </body>\n      </html>\n      `\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        -320
+      ],
+      "id": "c83d938e-e0a2-4640-af17-6cd0bacc6e7e",
+      "name": "Build Resume HTML"
+    }
+  ],
+  "pinData": {
+    "When clicking ‘Test workflow’": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Cover letter writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Pull up jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cover letter writer": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull up jobs": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Resume Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Base": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Build Resume HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Resume HTML": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "54867904-d3b6-4dbf-baf1-91bd273b52db",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cca6c8cd2651d3a1fad8483a139febb1065adaf7a160a3be9067fa7227ab750f"
+  },
+  "id": "wFJnuj3nNpHce3gf",
+  "tags": []
+}
